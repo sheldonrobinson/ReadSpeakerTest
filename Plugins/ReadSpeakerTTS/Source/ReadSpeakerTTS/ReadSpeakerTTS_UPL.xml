@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+// Copyright 2022 ReadSpeaker AB. All Rights Reserved.
+-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+  <init>
+      <log text="ReadSpeaker TTS init"/>
+      <setBoolFromProperty result="bAndroidArm64Enabled" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bBuildForArm64" default="false"/>
+      <setBoolFromProperty result="bAndroidArmV7Enabled" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bBuildForArmV7" default="false"/>
+  </init>
+
+  <proguardAdditions>
+    <insert>
+      -dontwarn com.readspeaker.**
+      -keep class com.readspeaker.** {*;}
+    </insert>
+  </proguardAdditions>
+
+  <androidManifestUpdates>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+  </androidManifestUpdates>
+  
+  <resourceCopies>
+
+    <copyFile src="$S(PluginDir)/../ThirdParty/TTSLibrary/Binaries/Android/libs/vtapi4a.jar" dst="$S(BuildDir)/libs/vtapi4a.jar" />
+    <copyFile src="$S(PluginDir)/../ThirdParty/TTSLibrary/Binaries/Android/libs/vtlicensemodule.jar" dst="$S(BuildDir)/libs/vtlicensemodule.jar" />  
+    <copyFile src="$S(PluginDir)/../ThirdParty/TTSLibrary/Binaries/Android/libs/libvtapijavawrapper.jar" dst="$S(BuildDir)/libs/libvtapijavawrapper.jar" />
+    <if condition="bAndroidArmV7Enabled">
+      <true>
+        <copyDir src="$S(PluginDir)/../../Binaries/ThirdParty/TTSLibrary/Android/armeabi-v7a" dst="$S(BuildDir)/jni/armeabi-v7a" />
+      </true>
+    </if>
+    <if condition="bAndroidArm64Enabled">
+      <true>
+        <copyDir src="$S(PluginDir)/../../Binaries/ThirdParty/TTSLibrary/Android/arm64-v8a" dst="$S(BuildDir)/jni/arm64-v8a" />
+      </true>
+    </if>
+  </resourceCopies>
+  
+  <gameActivityImportAdditions>
+    <insert>
+      // ReadSpeaker
+      import com.readspeaker.unity.libvtapijavawrapper.VTAPIJavaWrapper;
+    </insert>
+  </gameActivityImportAdditions>
+
+  <gameActivityClassAdditions>
+    
+    <insert>
+      /** ReadSpeaker Begin */
+
+      static
+      {
+      // *VTLIBS*
+      }
+
+      public void AndroidThunkJava_InitReadSpeaker(String licensePath, String voicePath, boolean verboseDebug){
+      Log.debug("[JAVA] - AndroidThunkJava_InitReadSpeaker Path:" + voicePath);
+      VTAPIJavaWrapper vtapi = new VTAPIJavaWrapper();
+      vtapi.loadTTS(licensePath, voicePath, null, verboseDebug);
+      }
+
+      public int AndroidThunkJava_GetEngineCountReadSpeaker(){
+      VTAPIJavaWrapper vtapi = new VTAPIJavaWrapper();
+      vtapi.getEngines();
+      int siz = vtapi.engineCount;
+      return siz;
+      }
+
+      public String[] AndroidThunkJava_GetEngineInfoOfIndexReadSpeaker(int i){
+      VTAPIJavaWrapper vtapi = new VTAPIJavaWrapper();
+      vtapi.getEngines();
+      String[] data = vtapi.getEngineInfoOfIndex(i);
+      Log.debug("In Java, found engine: " + data[0] + data[1] + data[2] + data[3]);
+      return data;
+      }
+
+      public byte[] AndroidThunkJava_TextToBufferReadSpeaker(String text, String voice, String type, int volume, int pitch, int speed, int pause, int commaPause, int textType){
+      Log.debug("[JAVA] - AndroidThunkJava_TextToBufferReadSpeaker: text = " + text + " voice = " + voice + " type = " + type + " textType = " + textType);
+      VTAPIJavaWrapper vtapi = new VTAPIJavaWrapper();
+      vtapi.textToBuffer(text, voice, type, volume, pitch, speed, pause, commaPause, -1, textType);
+      Log.debug("After textToBuffer");
+      return vtapi.result;
+      }
+
+      /** ReadSpeaker End */
+    </insert>
+  </gameActivityClassAdditions>
+</root>
