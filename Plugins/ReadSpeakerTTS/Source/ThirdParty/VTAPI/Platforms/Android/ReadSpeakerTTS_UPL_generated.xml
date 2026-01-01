@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+// Copyright 2022 ReadSpeaker AB. All Rights Reserved.
+-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+  <init>
+      <log text="ReadSpeaker TTS init"/>
+      <setBoolFromProperty result="bAndroidArm64Enabled" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bBuildForArm64" default="false"/>
+      <setBoolFromProperty result="bAndroidArmV7Enabled" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bBuildForArmV7" default="false"/>
+  </init>
+
+  <proguardAdditions>
+    <insert>
+      -dontwarn com.readspeaker.**
+      -keep class com.readspeaker.** {*;}
+    </insert>
+  </proguardAdditions>
+
+  <androidManifestUpdates>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+  </androidManifestUpdates>
+  
+  <resourceCopies>
+
+    <copyFile src="$S(PluginDir)/Libraries/vtapi4a.jar" dst="$S(BuildDir)/libs/vtapi4a.jar" />
+    <copyFile src="$S(PluginDir)/Libraries/vtlicensemodule.jar" dst="$S(BuildDir)/libs/vtlicensemodule.jar" />  
+    <copyFile src="$S(PluginDir)/Libraries/rsgame.jar" dst="$S(BuildDir)/libs/rsgame.jar" />
+    <if condition="bAndroidArmV7Enabled">
+      <true>
+        <copyDir src="$S(PluginDir)/Binaries/armeabi-v7a" dst="$S(BuildDir)/jni/armeabi-v7a" />
+      </true>
+    </if>
+    <if condition="bAndroidArm64Enabled">
+      <true>
+        <copyDir src="$S(PluginDir)/Binaries/arm64-v8a" dst="$S(BuildDir)/jni/arm64-v8a" />
+      </true>
+    </if>
+  </resourceCopies>
+  
+  <gameActivityImportAdditions>
+    <insert>
+      // ReadSpeaker
+      import com.readspeaker.rsgame.*;
+    </insert>
+  </gameActivityImportAdditions>
+
+  <gameActivityClassAdditions>
+    
+    <insert>
+      /** ReadSpeaker Begin */
+
+      static
+      {
+System.loadLibrary("vt_bre_d16");
+System.loadLibrary("vt_eng_custom23_n16");
+      // *VTLIBS*
+      }
+
+      public void AndroidThunkJava_InitReadSpeaker(String licensePath, String voicePath, boolean verboseDebug){
+      Log.debug("[JAVA] - AndroidThunkJava_InitReadSpeaker Path:" + voicePath);
+      RSGame rsgame = new RSGame();
+      rsgame.loadTTS(licensePath, voicePath, null, verboseDebug);
+      }
+
+      public int AndroidThunkJava_GetEngineCountReadSpeaker(){
+      RSGame rsgame = new RSGame();
+      rsgame.getEngines();
+      int siz = rsgame.engineCount;
+      return siz;
+      }
+
+      public String[] AndroidThunkJava_GetEngineInfoOfIndexReadSpeaker(int i){
+      RSGame rsgame = new RSGame();
+      rsgame.getEngines();
+      String[] data = rsgame.getEngineInfoOfIndex(i);
+      return data;
+      }
+
+      public byte[] AndroidThunkJava_TextToBufferReadSpeaker(String text, String voice, String type, int volume, int pitch, int speed, int pause, int commaPause, int textType){
+      Log.debug("[JAVA] - AndroidThunkJava_TextToBufferReadSpeaker: text = " + text + " voice = " + voice + " type = " + type + " textType = " + textType);
+      RSGame rsgame = new RSGame();
+      rsgame.textToBuffer(text, voice, type, volume, pitch, speed, pause, commaPause, -1, textType);
+      return rsgame.result;
+      }
+
+      /** ReadSpeaker End */
+    </insert>
+  </gameActivityClassAdditions>
+</root>
